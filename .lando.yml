@@ -1,0 +1,70 @@
+name: wordpress
+recipe: wordpress
+
+proxy:
+  appserver:
+    - wordpress.lndo.site
+  pma:
+    - phpmyadmin.lndo.site
+  mailhog:
+    - mailhog.lndo.site
+
+config:
+  php: "7.4"
+  via: apache
+  webroot: www
+  xdebug: true
+
+  # To force Composer v1
+  # composer_version: '1.10.24'
+
+  config:
+    php: config/php.ini
+
+# Disable key loading - https://docs.lando.dev/config/ssh.html#customizing
+keys: false
+
+services:
+  appserver:
+    ports:
+      # A nice handy known-local port  http://localhost:8080
+      - "8080:80"
+
+    # Bind my exposes services to all intefaces
+    #  - "0.0.0.0::80"
+
+    build_as_root:
+      # Apache mod headers
+      - a2enmod headers
+
+      # Install xdebug-2.9.8, wait until Xdebug 3 is fully tested
+      # - pecl uninstall xdebug
+      # - pecl install xdebug-2.9.8
+
+  database:
+    type: mysql
+    # type: mysql:5.7
+    # type: mysql:8.0
+    # config:
+    #   database: config/mysql8.cnf
+    portforward: 3306
+    creds:
+      user: wordpress
+      password: wordpress
+      database: wordpress
+
+  pma:
+    type: phpmyadmin
+
+  mailhog:
+    type: mailhog
+    hogfrom:
+      - appserver
+
+tooling:
+  install:
+    service: appserver
+    description: "Command to install WordPress."
+    cmd:
+      - echo Installing WordPress ...
+      - php config/install_wp.php
