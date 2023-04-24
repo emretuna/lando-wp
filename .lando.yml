@@ -28,7 +28,7 @@ services:
   appserver:
     ports:
       # A nice handy known-local port  http://localhost:8080
-      - "8080:80"
+      - "8888:80"
 
     # Bind my exposes services to all intefaces
     #  - "0.0.0.0::80"
@@ -60,11 +60,14 @@ services:
     type: mailhog
     hogfrom:
       - appserver
-
 tooling:
   install:
     service: appserver
-    description: "Command to install WordPress."
     cmd:
-      - echo Installing WordPress ...
-      - php config/install_wp.php
+      - wp core download && wp config create --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=database
+
+events:
+  pre-stop:
+    - echo "Backing up database..."
+    - wp db export --path=/app - | gzip > /app/db_backup.sql.gz
+    - echo "Database successfully backed up"
